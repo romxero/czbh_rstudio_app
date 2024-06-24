@@ -12,6 +12,15 @@ attributes:
     widget: "text_field"
     value: ''
 
+  reset_checkbox:
+    widget: check_box
+    checked_value: 1
+    unchecked_value: 0
+    label: "Reset RStudio User Environment"
+    help: |
+      Check this box to purge the Rhistory, Rdata, and Rprofile files in the user's home directory.
+      This will reset the user's RStudio environment to its default state.
+
   working_directory:
     label: 'Working Directory'
     help: Choose a directory to be the working directory for this session.
@@ -47,6 +56,7 @@ attributes:
 form:
   - auto_modules_r
   - mod_extra
+  - reset_checkbox
   - working_directory
   - slurm_timelimit
   - slurm_reservation

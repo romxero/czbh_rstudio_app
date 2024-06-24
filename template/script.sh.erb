@@ -15,6 +15,72 @@ echo "Module load completed."
 # Start RStudio Server
 #
 
+# After loading the R module, lets see if resetting the environment is needed
+
+<%- if context.reset_checkbox == "1" -%>
+reset_rstudio_env () {
+
+pushd /home/$(whoami)
+# remove stored data file and history
+# remove the Rstudio-Desktop state file
+
+if [ -f .RData ]; then
+  rm -f .RData
+fi
+
+if [ -f .Rhistory ]; then
+  rm -f .Rhistory
+fi
+
+
+# move the Rstudio config files to a backup location
+
+if [ -d ~/.local/share/rstudio ]; then
+    if [ -d ~/.local/share/rstudio-backup ]; then
+        rm -rf ~/.local/share/rstudio-backup
+    fi
+
+  mv -f ~/.local/share/rstudio ~/.local/share/rstudio-backup
+
+fi
+
+
+
+if [ -d ~/.config/RStudio ]; then
+
+  if [ -d ~/backup-RStudio ]; then
+    rm -rf ~/backup-RStudio
+  fi
+
+  mv -f ~/.config/RStudio ~/backup-RStudio
+
+fi
+
+
+
+if [ -d ~/.config/rstudio ]; then
+
+  if [ -d ~/backup-rstudio ]; then
+    rm -rf ~/backup-rstudio
+  fi
+
+  mv -f ~/.config/rstudio/ ~/backup-rstudio
+
+fi
+
+
+# run this method to clean up the Rstudio session
+Rscript <(echo "gc(); gctorture(FALSE);")
+
+popd
+
+
+}
+
+reset_rstudio_env
+#finir
+<%- end -%>
+
 # PAM auth helper used by RStudio
 export RSTUDIO_AUTH="${PWD}/bin/auth"
 
