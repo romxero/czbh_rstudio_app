@@ -1,0 +1,58 @@
+---
+title: "RStudio Server"
+description: Starts an RStudio server on the requested resources.
+cluster: "bruno"
+
+attributes:
+  auto_modules_r:
+    default: false
+
+  mod_extra: 
+    label: "Additional modules"
+    widget: "text_field"
+    value: ''
+
+  working_directory:
+    label: 'Working Directory'
+    help: Choose a directory to be the working directory for this session.
+    data-filepicker: true
+    data-show-hidden: true
+    data-target-file-type: dirs  # Valid values are: files, dirs, or both
+    data-default-directory: '$HOME' 
+    readonly: false
+    value: '$HOME'
+
+  extra_jupyter_args: ""
+
+
+
+<%= UserOptions.resource_picker_slurm_timelimit %>
+<%= UserOptions.resource_picker_slurm_reservation %>
+
+<%= UserOptions.resource_picker_slurm_partition_all %>
+<%= UserOptions.resource_picker_slurm_cores %>
+
+  rs_memory_cpu:
+    label: "Amount of memory per core in GB (--mem-per-cpu=THIS_VALUE)"
+    help: "This value sets the per-core RAM available to the job in GB, e.g, 15G"
+    widget: "number_field"
+    value: "15"
+    min: "8"
+    max: "60"
+
+<%= UserOptions.resource_picker_slurm_gpu_type %>
+<%= UserOptions.resource_picker_slurm_gpu_count %>
+
+
+form:
+  - auto_modules_r
+  - mod_extra
+  - working_directory
+  - slurm_timelimit
+  - slurm_reservation
+  - slurm_partition_all
+  - slurm_cores
+  - rs_memory_cpu
+  - slurm_gpu_type
+  - slurm_gpu_count
+

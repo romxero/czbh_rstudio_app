@@ -1,0 +1,33 @@
+# Job submission configuration file
+#
+---
+
+batch_connect:
+  template: "basic"
+  conn_params:
+        - csrf_token
+
+script:
+  native:
+    - "-N"
+    - 1
+    - "-n"
+    - 1
+    - "-c"
+    - "<%= slurm_cores.blank? ? "1" : slurm_cores.to_i %>"
+    - "-p"
+    - "<%= slurm_partition.blank? ? "cpu" : slurm_partition %>"
+    - "-t"
+    - "<%= slurm_timelimit.blank? ? "4:00:00" : slurm_timelimit %>"
+    - "--mem-per-cpu=<%= rs_memory_cpu.blank? ? "15" : rs_memory_cpu + 'G' %>"
+  <%- unless slurm_gpu_count.to_i == 0 -%>
+    <%- unless slurm_partition == 'cpu' -%>
+      <% gpu_type, gpu_constraint = slurm_gpu_type.include?(',') ? slurm_gpu_type.split(',', 2) : [slurm_gpu_type, nil] %>
+    - "--gpus=<%= gpu_type.present? ? "#{gpu_type}:" : "" %><%= slurm_gpu_count.to_s %>"
+      <%- if gpu_constraint -%>
+    - "--constraint=<%= gpu_constraint %>"
+      <%- end -%>
+    <%- end -%>
+  <%- end -%>
+    - "--job-name=OD_RStudio"
+

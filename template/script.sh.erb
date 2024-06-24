@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+#
+# Load modules
+#
+
+echo "Load modules."
+module purge
+module load proot
+module load <%= context.auto_modules_r %>
+module list
+echo "Module load completed."
+
+#
+# Start RStudio Server
+#
+
+# PAM auth helper used by RStudio
+export RSTUDIO_AUTH="${PWD}/bin/auth"
+
+# Generate an `rsession` wrapper script
+export RSESSION_WRAPPER_FILE="${PWD}/rsession.sh"
+(
+umask 077
+sed 's/^ \{2\}//' > "${RSESSION_WRAPPER_FILE}" << EOL
+  #!/usr/bin/env bash
+
+  # Log all output from this script
+  export RSESSION_LOG_FILE="${PWD}/rsession.log"
+  exec &>>"\${RSESSION_LOG_FILE}"
+
+  # Launch the original command
+  echo "Launching rsession..."
+  set -x
+  exec /usr/lib/rstudio-server/bin/rsession --r-libs-user "${R_LIBS_USER}" "\${@}"
+EOL
+)
+chmod 700 "${RSESSION_WRAPPER_FILE}"
+
+# Where to keep rstudio-server database.
+export RSTUDIO_DATABASE_CONFIG=${PWD}/database.conf
+cat > ${RSTUDIO_DATABASE_CONFIG} <<- EOF
+	provider=sqlite
+	directory=${PWD}
+	EOF
+
+# Working and data directories. Maybe make these user-selectable?
+export RSTUDIO_SERVER_WORKING_DIR=/tmp/rserver-${SLURM_JOB_ID}.working
+[[ -d ${RSTUDIO_SERVER_WORKING_DIR} ]] || mkdir -p ${RSTUDIO_SERVER_WORKING_DIR} 
+
+export RSTUDIO_SERVER_DATA_DIR=/tmp/rserver-${SLURM_JOB_ID}.data
+[[ -d ${RSTUDIO_SERVER_DATA_DIR} ]] || mkdir -p ${RSTUDIO_SERVER_DATA_DIR}
+
+# Where to put the cookie?
+export RSTUDIO_SECURE_COOKIE_KEY_FILE=${PWD}/secure-cookie-key
+
+
+# Set current working directory to home directory
+cd "${HOME}"
+
+ulimit -c 400
+
+# Launch the RStudio Server
+echo "Starting up rserver..."
+set -x
+/usr/lib/rstudio-server/bin/rserver \
+  --auth-timeout-minutes 0 \
+  --server-daemonize 0 \
+  --auth-encrypt-password 0 \
+  --auth-none 0 \
+  --auth-pam-helper-path "${RSTUDIO_AUTH}" \
+  --database-config-file ${RSTUDIO_DATABASE_CONFIG} \
+  --rsession-path "${RSESSION_WRAPPER_FILE}" \
+  --secure-cookie-key-file ${RSTUDIO_SECURE_COOKIE_KEY_FILE} \
+  --server-data-dir ${RSTUDIO_SERVER_DATA_DIR} \
+  --server-user ${USER} \
+  --server-working-dir ${RSTUDIO_SERVER_WORKING_DIR} \
+  --www-port ${port} 
+
+
